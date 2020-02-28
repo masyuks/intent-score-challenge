@@ -2,18 +2,134 @@ package id.putraprima.skorbola;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import id.putraprima.skorbola.model.DataTim;
+
+import static id.putraprima.skorbola.MainActivity.EXTRA_DATA;
 
 public class MatchActivity extends AppCompatActivity {
+
+    private static final String EXTRA_RESULT = "EXTRA_RESULT";
+
+    private static final int REQUEST_CODE_SCORE_HOME = 1;
+    private static final int REQUEST_CODE_SCORE_AWAY = 2;
+
+    private TextView homeNameText;
+    private TextView awayNameText;
+    private ImageView homeLogoPict;
+    private ImageView awayLogoPict;
+    private DataTim tim;
+    private TextView homeScoreText;
+    private TextView awayScoreText;
+    private int homeScore = 0;
+    private int awayScore = 0;
+    private ArrayList<String> playerGoalsHome = new ArrayList<String>();
+    private ArrayList<String> minutesHome = new ArrayList<String>();
+    private ArrayList<String> playerGoalsAway = new ArrayList<String>();
+    private ArrayList<String> minutesAway = new ArrayList<String>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_match);
-        //TODO
-        //1.Menampilkan detail match sesuai data dari main activity
-        //2.Tombol add score menambahkan memindah activity ke scorerActivity dimana pada scorer activity di isikan nama pencetak gol
-        //3.Dari activity scorer akan mengirim kembali ke activity matchactivity otomatis nama pencetak gol dan skor bertambah +1
-        //4.Tombol Cek Result menghitung pemenang dari kedua tim dan mengirim nama pemenang beserta nama pencetak gol ke ResultActivity, jika seri di kirim text "Draw",
+
+        homeNameText = findViewById(R.id.txt_home);
+        awayNameText = findViewById(R.id.txt_away);
+        homeLogoPict = findViewById(R.id.home_logo);
+        awayLogoPict = findViewById(R.id.away_logo);
+
+        Intent extras = getIntent();
+        if (extras != null) {
+            tim = extras.getParcelableExtra(EXTRA_DATA);
+            homeNameText.setText(tim.getHomeName());
+            awayNameText.setText(tim.getAwayName());
+            try {
+                Bitmap homeLogo = MediaStore.Images.Media.getBitmap(this.getContentResolver(), Uri.parse(tim.getHomeLogo()));
+                Bitmap awayLogo = MediaStore.Images.Media.getBitmap(this.getContentResolver(), Uri.parse(tim.getAwayLogo()));
+                awayLogoPict.setImageBitmap(awayLogo);
+                homeLogoPict.setImageBitmap(homeLogo);
+            } catch (IOException e) {
+                Toast.makeText(this, "Can't load image", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    public void handleScoreHome(View view) {
+//        homeScore+=1;
+//        homeScoreText = findViewById(R.id.score_home);
+//        homeScoreText.setText(String.valueOf(homeScore));
+        Intent intent = new Intent(this, ScorerActivity.class);
+        startActivityForResult(intent, REQUEST_CODE_SCORE_HOME);
+    }
+
+    public void handleScoreAway(View view) {
+//        awayScore+=1;
+//        awayScoreText = findViewById(R.id.score_away);
+//        awayScoreText.setText(String.valueOf(awayScore));
+        Intent intent = new Intent(this, ScorerActivity.class);
+        startActivityForResult(intent, REQUEST_CODE_SCORE_AWAY);
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Check that it is the SecondActivity with an OK result
+        if (requestCode == REQUEST_CODE_SCORE_HOME) {
+            if (resultCode == RESULT_OK) {
+
+                // Get String data from Intent
+                playerGoalsHome.add(data.getStringExtra("player"));
+                minutesHome.add(data.getStringExtra("minutes"));
+
+                // Set text view with string
+                homeScore+=1;
+                homeScoreText = findViewById(R.id.score_home);
+                homeScoreText.setText(String.valueOf(homeScore));
+                TextView playerGoals = findViewById(R.id.txt_playergoalsHome);
+                for(int i=0; i>playerGoalsHome.size(); i++){
+                    playerGoals.setText(playerGoalsHome.get(i)+" '"+minutesHome.get(i)+"',");
+                }
+            }
+        }
+        else if (requestCode == REQUEST_CODE_SCORE_AWAY) {
+            if (resultCode == RESULT_OK) {
+
+                // Get String data from Intent
+                playerGoalsAway.add(data.getStringExtra("player"));
+                minutesAway.add(data.getStringExtra("minutes"));
+
+                // Set text view with string
+                awayScore+=1;
+                awayScoreText = findViewById(R.id.score_away);
+                awayScoreText.setText(String.valueOf(awayScore));
+                TextView playerGoals = findViewById(R.id.txt_playergoalsAway);
+                for(int i=0; i>playerGoalsAway.size(); i++){
+                    playerGoals.setText(playerGoalsAway.get(i)+" '"+minutesAway.get(i)+"',");
+                }
+            }
+        }
+    }
+
+    public void cekResult(View view) {
+        String result = (homeScore == awayScore) ? tim.getHomeName()+" Imbang dengan "+tim.getAwayName():
+                (homeScore > awayScore) ? tim.getHomeName()+" Menang !! ": tim.getAwayName()+" Menang!! ";
+
+        Intent intent = new Intent(this, ResultActivity.class);
+        intent.putExtra(ResultActivity.EXTRA_RESULT, result);
+        startActivity(intent);
     }
 }
