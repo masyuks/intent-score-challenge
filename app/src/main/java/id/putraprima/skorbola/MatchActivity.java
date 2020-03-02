@@ -16,9 +16,12 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import id.putraprima.skorbola.model.DataTim;
+import id.putraprima.skorbola.model.Score;
 
+import static android.text.TextUtils.concat;
 import static id.putraprima.skorbola.MainActivity.EXTRA_DATA;
 
 public class MatchActivity extends AppCompatActivity {
@@ -37,10 +40,9 @@ public class MatchActivity extends AppCompatActivity {
     private TextView awayScoreText;
     private int homeScore = 0;
     private int awayScore = 0;
-    private ArrayList<String> playerGoalsHome = new ArrayList<String>();
-    private ArrayList<String> minutesHome = new ArrayList<String>();
-    private ArrayList<String> playerGoalsAway = new ArrayList<String>();
-    private ArrayList<String> minutesAway = new ArrayList<String>();
+    private List<Score> homeScorers = new ArrayList<>();
+    private List<Score> awayScorers = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,38 +90,44 @@ public class MatchActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         // Check that it is the SecondActivity with an OK result
+        Score scorer;
+        StringBuilder tempScorers = new StringBuilder();
         if (requestCode == REQUEST_CODE_SCORE_HOME) {
             if (resultCode == RESULT_OK) {
 
                 // Get String data from Intent
-                playerGoalsHome.add(data.getStringExtra("player"));
-                minutesHome.add(data.getStringExtra("minutes"));
+                scorer = data.getParcelableExtra(ScorerActivity.EXTRA_SCORER);
+                homeScorers.add(scorer);
 
                 // Set text view with string
                 homeScore+=1;
                 homeScoreText = findViewById(R.id.score_home);
                 homeScoreText.setText(String.valueOf(homeScore));
                 TextView playerGoals = findViewById(R.id.txt_playergoalsHome);
-                for(int i=0; i>playerGoalsHome.size(); i++){
-                    playerGoals.setText(playerGoalsHome.get(i)+" '"+minutesHome.get(i)+"',");
+                for (Score s : homeScorers) {
+                    String temp = s.getNama() + " " + s.getMinutes() + "\"";
+                    tempScorers.append("\n" + temp);
                 }
+                playerGoals.setText(tempScorers);
             }
         }
         else if (requestCode == REQUEST_CODE_SCORE_AWAY) {
             if (resultCode == RESULT_OK) {
 
                 // Get String data from Intent
-                playerGoalsAway.add(data.getStringExtra("player"));
-                minutesAway.add(data.getStringExtra("minutes"));
+                scorer = data.getParcelableExtra(ScorerActivity.EXTRA_SCORER);
+                awayScorers.add(scorer);
 
                 // Set text view with string
                 awayScore+=1;
                 awayScoreText = findViewById(R.id.score_away);
                 awayScoreText.setText(String.valueOf(awayScore));
                 TextView playerGoals = findViewById(R.id.txt_playergoalsAway);
-                for(int i=0; i>playerGoalsAway.size(); i++){
-                    playerGoals.setText(playerGoalsAway.get(i)+" '"+minutesAway.get(i)+"',");
+                for (Score s : awayScorers) {
+                    String temp = s.getNama() + " " + s.getMinutes() + "\"";
+                    tempScorers.append("\n" + temp);
                 }
+                playerGoals.setText(tempScorers);
             }
         }
     }

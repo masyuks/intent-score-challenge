@@ -14,13 +14,16 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.mobsandgeeks.saripaar.ValidationError;
+import com.mobsandgeeks.saripaar.Validator;
 import com.mobsandgeeks.saripaar.annotation.NotEmpty;
 
 import java.io.IOException;
+import java.util.List;
 
 import id.putraprima.skorbola.model.DataTim;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Validator.ValidationListener {
     public static String EXTRA_DATA = "extra";
 
     private static final int REQUEST_CODE_HOME = 1;
@@ -32,19 +35,22 @@ public class MainActivity extends AppCompatActivity {
     private EditText homeNameInput;
     @NotEmpty
     private EditText awayNameInput;
-    @NotEmpty
+
     private ImageView homeLogoPict;
-    @NotEmpty
     private ImageView awayLogoPict;
 
     private String homeLogo;
     private String awayLogo;
 
+    private Validator validator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        validator = new Validator(this);
+        validator.setValidationListener(this);
         //TODO
         //Fitur Main Activity
         //1. Validasi Input Home Team
@@ -95,6 +101,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void handleNext(View view) {
+        validator.validate();
+    }
+
+    @Override
+    public void onValidationSucceeded() {
         String homeName = homeNameInput.getText().toString();
         String awayName = awayNameInput.getText().toString();
 
@@ -105,5 +116,20 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra(EXTRA_DATA, new DataTim(homeName, awayName, homeLogo, awayLogo));
 
         startActivity(intent);
+    }
+
+    @Override
+    public void onValidationFailed(List<ValidationError> errors) {
+        for (ValidationError error : errors) {
+            View view = error.getView();
+            String message = error.getCollatedErrorMessage(this);
+
+            // Display error messages ;)
+            if (view instanceof EditText) {
+                ((EditText) view).setError(message);
+            } else {
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }
